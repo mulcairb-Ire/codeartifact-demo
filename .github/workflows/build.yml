@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p ~/.m2
 
-          cat > ~/.m2/settings.xml <<EOF
+          cat > ~/.m2/settings.xml <<'EOF'
           <settings>
            <servers>
             <server>
@@ -85,7 +85,19 @@ jobs:
 
           echo "Maven settings:"
           cat ~/.m2/settings.xml
-
+          
+      - name: Test CodeArtifact access
+        run: |
+          aws codeartifact describe-package-version \
+            --domain my-domain \
+            --domain-owner 878145708291 \
+            --repository my-maven-repo \
+            --format maven \
+            --namespace com.example \
+            --package hello-library \
+            --package-version 1.0.0 \
+            --region eu-west-1
+  
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
