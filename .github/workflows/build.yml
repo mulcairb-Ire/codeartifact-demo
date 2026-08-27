@@ -43,6 +43,7 @@ jobs:
             --query repositoryEndpoint \
             --output text)" >> "$GITHUB_ENV"
 
+
       - name: Configure Maven
         run: |
           mkdir -p ~/.m2
@@ -53,7 +54,7 @@ jobs:
               <server>
                 <id>codeartifact</id>
                 <username>aws</username>
-                <password>${env.CODEARTIFACT_AUTH_TOKEN}</password>
+                <password>\${env.CODEARTIFACT_AUTH_TOKEN}</password>
               </server>
             </servers>
 
@@ -76,6 +77,14 @@ jobs:
           EOF
 
 
+      - name: Configure Maven for CodeArtifact
+        run: |
+          aws codeartifact login \
+          --tool mvn \
+          --domain my-domain \
+          --domain-owner 878145708291 \
+          --repository my-repository \
+          --region eu-west-1
 
 
       - name: Set up Java
