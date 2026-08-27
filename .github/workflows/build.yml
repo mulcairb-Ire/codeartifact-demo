@@ -74,6 +74,17 @@ jobs:
           </settings>
           EOF
 
+      - name: Check CodeArtifact token
+        run: |
+          if [ -n "$CODEARTIFACT_AUTH_TOKEN" ]; then
+            echo "CodeArtifact token is present"
+          else
+           echo "CodeArtifact token is MISSING"
+           exit 1
+          fi
+
+         echo "Maven settings:"
+         cat ~/.m2/settings.xml
 
       - name: Set up Java
         uses: actions/setup-java@v4
