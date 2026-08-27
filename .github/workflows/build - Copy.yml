@@ -1,0 +1,84 @@
+name: Build Java Project
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  APPLICATION_NAME: ${{ vars.APPLICATION_NAME }}
+  ENVIRONMENT_NAME: ${{ vars.ENVIRONMENT_NAME }}
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+          cache: maven
+
+      - name: Debug AWS OIDC claims
+        shell: bash
+        run: |
+              TOKEN=$(curl -s \
+                -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+                "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
+                | jq -r '.value')
+
+              echo "$TOKEN" | cut -d '.' -f2 \
+                | tr '_-' '/+' \
+                | awk '{ while (length($0)%4) $0=$0"="; print }' \
+                | base64 -d \
+                | jq                    
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::878145708291:role/GithubActions
+          aws-region: us-east-1
+
+      - name: Build with Maven
+        run: mvn clean package
+      
+      - name: Package application
+        run: |
+            cp target/hello-web-1.0.jar app.jar
+            zip app.zip app.jar Procfile
+    
+      - name: Check artifact
+        run: |
+            ls -lah target/*.jar
+        
+      - name: Upload JAR
+        run: |
+          aws s3 cp app.zip \
+            s3://${{ env.S3_BUCKET }}/app-${{ github.sha }}.zip
+
+      - name: Create application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ env.APPLICATION_NAME }}" \
+            --version-label "${{ github.sha }}" \
+            --source-bundle \
+              S3Bucket=${{ env.S3_BUCKET }},S3Key=app-${{ github.sha }}.zip
+
+      - name: Deploy
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "${{ env.ENVIRONMENT_NAME }}" \
+            --version-label "${{ github.sha }}"
+      
