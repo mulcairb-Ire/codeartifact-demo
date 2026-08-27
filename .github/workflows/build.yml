@@ -42,17 +42,37 @@ jobs:
             --region eu-west-1 \
             --query repositoryEndpoint \
             --output text)" >> "$GITHUB_ENV"
-
-
-
-      - name: Configure Maven for CodeArtifact
+      - name: Configure Maven
         run: |
-          aws codeartifact login \
-          --tool mvn \
-          --domain my-domain \
-          --domain-owner 878145708291 \
-          --repository my-repository \
-          --region eu-west-1
+          mkdir -p ~/.m2
+
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+           <servers>
+            <server>
+              <id>codeartifact</id>
+              <username>aws</username>
+              <password>$CODEARTIFACT_AUTH_TOKEN</password>
+            </server>
+           </servers>
+
+           <profiles>
+            <profile>
+            <id>codeartifact</id>
+            <repositories>
+             <repository>
+              <id>codeartifact</id>
+              <url>$CODEARTIFACT_MAVEN_URL</url>
+             </repository>
+             </repositories>
+            </profile>
+           </profiles>
+
+            <activeProfiles>
+             <activeProfile>codeartifact</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
 
 
       - name: Set up Java
