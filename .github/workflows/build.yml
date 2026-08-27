@@ -44,38 +44,6 @@ jobs:
             --output text)" >> "$GITHUB_ENV"
 
 
-      - name: Configure Maven
-        run: |
-          mkdir -p ~/.m2
-
-          cat > ~/.m2/settings.xml <<EOF
-          <settings>
-            <servers>
-              <server>
-                <id>codeartifact</id>
-                <username>aws</username>
-                <password>\${env.CODEARTIFACT_AUTH_TOKEN}</password>
-              </server>
-            </servers>
-
-            <profiles>
-              <profile>
-                <id>codeartifact</id>
-                <repositories>
-                  <repository>
-                    <id>codeartifact</id>
-                    <url>${env.CODEARTIFACT_MAVEN_URL}</url>
-                  </repository>
-                </repositories>
-              </profile>
-            </profiles>
-
-            <activeProfiles>
-              <activeProfile>codeartifact</activeProfile>
-            </activeProfiles>
-          </settings>
-          EOF
-
 
       - name: Configure Maven for CodeArtifact
         run: |
