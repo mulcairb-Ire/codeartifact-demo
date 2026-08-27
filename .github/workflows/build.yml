@@ -37,7 +37,7 @@ jobs:
           echo "CODEARTIFACT_MAVEN_URL=$(aws codeartifact get-repository-endpoint \
             --domain my-domain \
             --domain-owner 878145708291 \
-            --repository codeartifact-demo \
+            --repository my-maven-repo \
             --format maven \
             --region eu-west-1 \
             --query repositoryEndpoint \
